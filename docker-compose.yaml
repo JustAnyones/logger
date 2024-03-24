@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  bot:
+    build:
+      context: .
+      dockerfile: dockerfile
+    env_file:
+      - config.env
+    links:
+      - "redis:redis"
+      - "db:database"
+    depends_on:
+      - init_db
+
+  init_db:
+    build:
+      context: .
+      dockerfile: dockerfile
+    env_file:
+      - config.env
+    command: "node src/miscellaneous/generateDB.js"
+    links:
+      - "db:database"
+    depends_on:
+      - db
+
+  redis:
+    image: redis:7.2.4
+
+  db:
+    image: postgres:15-bullseye
+    restart: unless-stopped
+    env_file:
+      - config.env
+    environment:
+      - POSTGRES_PASSWORD=postgres
+    #expose:
+    #  - "5432"
+    volumes: 
+      - ./data/db:/var/lib/postgresql/data
+      - ./init-database.sh:/docker-entrypoint-initdb.d/init-database.sh
